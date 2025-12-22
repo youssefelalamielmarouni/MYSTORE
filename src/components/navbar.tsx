@@ -4,8 +4,9 @@ import { useState } from "react";
 
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isAuthenticated = !!localStorage.getItem("auth_token");
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     console.log("Open search modal");
   };
@@ -105,22 +106,35 @@ export default function Navbar() {
 
               {/* Desktop User Actions */}
               <div className="hidden md:flex items-center space-x-4">
-                <Link 
-                  to="/login" 
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group"
-                >
-                  <User size={20} className="text-gray-600 group-hover:text-purple-600" />
-                  <span className="font-medium text-gray-700 group-hover:text-purple-600">
-                    Login
-                  </span>
-                </Link>
-               <Link 
-  to="/registration"
-  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all duration-200 no-underline"
-  style={{ color: 'white' }}
->
-  Sign Up
-</Link>
+                {isAuthenticated ? (
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group"
+                  >
+                    <User size={20} className="text-gray-600 group-hover:text-purple-600" />
+                    <span className="font-medium text-gray-700 group-hover:text-purple-600">
+                      Profile
+                    </span>
+                  </Link>
+                ) : (
+                  <>
+                    <Link 
+                      to="/login" 
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group"
+                    >
+                      <User size={20} className="text-gray-600 group-hover:text-purple-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-purple-600">
+                        Login
+                      </span>
+                    </Link>
+                    <Link 
+                      to="/registration"
+                      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all duration-200 no-underline text-white"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -166,23 +180,45 @@ export default function Navbar() {
           <div className="p-4">
             {/* User Section */}
             <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-              <p className="text-gray-600 text-sm mb-2">Welcome to MyStore</p>
-              <div className="flex space-x-3">
-                <Link 
-                  to="/login"
-                  onClick={closeSidebar}
-                  className="flex-1 px-4 py-2 bg-white text-purple-600 border border-purple-200 rounded-lg font-medium text-center hover:bg-purple-50 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/registration"
-                  onClick={closeSidebar}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium text-center hover:shadow-md transition-shadow"
-                >
-                  Sign Up
-                </Link>
-              </div>
+              {isAuthenticated ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+                      <User className="text-purple-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-gray-800 text-sm font-semibold">Logged in</p>
+                      <Link 
+                        to="/profile"
+                        onClick={closeSidebar}
+                        className="text-xs text-purple-600 hover:text-purple-700 no-underline font-medium"
+                      >
+                        Go to Profile
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-600 text-sm mb-2">Welcome to MyStore</p>
+                  <div className="flex space-x-3">
+                    <Link 
+                      to="/login"
+                      onClick={closeSidebar}
+                      className="flex-1 px-4 py-2 bg-white text-purple-600 border border-purple-200 rounded-lg font-medium text-center hover:bg-purple-50 transition-colors"
+                    >
+                      Login
+                    </Link>
+                    <Link 
+                      to="/registration"
+                      onClick={closeSidebar}
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium text-center hover:shadow-md transition-shadow"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Navigation Links */}

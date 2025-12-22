@@ -1,21 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false
   });
-
-interface FormData {
-    email: string;
-    password: string;
-    rememberMe: boolean;
-}
 
 const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
@@ -25,10 +22,48 @@ const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     }));
 };
 
-const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    console.log("Login data:", formData);
-    // Add your login logic here
+    setError(null);
+    setIsLoading(true);
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email: formData.email,
+                password: formData.password,
+                remember: formData.rememberMe,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || "Login failed");
+        }
+
+        // Try to read token from common fields
+        const token = data.token ?? data.access_token ?? data?.data?.token;
+        if (token) {
+            // Persist token for authenticated requests
+            localStorage.setItem("auth_token", token);
+        }
+
+        // Success: handle token / redirect as needed
+        console.log("Login successful:", data);
+        alert("Login successful!");
+        navigate("/");
+
+    } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred during login");
+        console.error("Login error:", err);
+    } finally {
+        setIsLoading(false);
+    }
 };
 
   return (
@@ -47,6 +82,11 @@ const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Input */}
             <div>
@@ -128,10 +168,11 @@ const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all duration-200 flex items-center justify-center"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all duration-200 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <LogIn className="mr-2 h-5 w-5" />
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 

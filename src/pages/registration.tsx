@@ -1,31 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User, Phone, UserPlus, Check } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, UserPlus } from "lucide-react";
 
 export default function Registration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
-    termsAccepted: false,
-    newsletter: true
+    termsAccepted: false
   });
-
-interface FormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-    confirmPassword: string;
-    termsAccepted: boolean;
-    newsletter: boolean;
-}
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -35,25 +23,55 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }));
 };
 
-const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+    
     if (formData.password !== formData.confirmPassword) {
-        alert("Passwords don't match!");
+        setError("Passwords don't match!");
         return;
     }
-    console.log("Registration data:", formData);
-    // Add your registration logic here
+
+    if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters!");
+        return;
+    }
+
+    setIsLoading(true);
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                password_confirmation: formData.confirmPassword
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || "Registration failed");
+        }
+
+        // Success - you can redirect or show success message
+        alert("Registration successful!");
+        console.log("Registration successful:", data);
+        
+    } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred during registration");
+        console.error("Registration error:", err);
+    } finally {
+        setIsLoading(false);
+    }
 };
 
-  const passwordRequirements = [
-    { label: "At least 8 characters", met: formData.password.length >= 8 },
-    { label: "Contains uppercase letter", met: /[A-Z]/.test(formData.password) },
-    { label: "Contains lowercase letter", met: /[a-z]/.test(formData.password) },
-    { label: "Contains number", met: /\d/.test(formData.password) },
-    { label: "Contains special character", met: /[!@#$%^&*]/.test(formData.password) }
-  ];
-
-  const allRequirementsMet = passwordRequirements.every(req => req.met);
+  const passwordValid = formData.password.length >= 6;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 flex items-center justify-center p-4">
@@ -71,47 +89,31 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="John"
-                    required
-                  />
+            {/* Name Field */}
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="Doe"
-                    required
-                  />
-                </div>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="John Doe"
+                  required
+                  maxLength={255}
+                />
               </div>
             </div>
 
@@ -132,26 +134,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="you@example.com"
                   required
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Phone Number (Optional)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="(555) 123-4567"
+                  maxLength={255}
                 />
               </div>
             </div>
@@ -187,25 +170,9 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                     )}
                   </button>
                 </div>
-
-                {/* Password Requirements */}
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Password must contain:</p>
-                  <ul className="space-y-1">
-                    {passwordRequirements.map((req, index) => (
-                      <li key={index} className="flex items-center text-sm">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
-                          req.met ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Check size={12} />
-                        </div>
-                        <span className={req.met ? 'text-green-600' : 'text-gray-500'}>
-                          {req.label}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {formData.password && formData.password.length < 6 && (
+                  <p className="mt-2 text-sm text-red-600">Password must be at least 6 characters</p>
+                )}
               </div>
 
               <div>
@@ -274,36 +241,20 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                 </div>
               </div>
 
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    type="checkbox"
-                    name="newsletter"
-                    checked={formData.newsletter}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label className="text-gray-700">
-                    Subscribe to our newsletter for exclusive deals and updates
-                  </label>
-                </div>
-              </div>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!allRequirementsMet || !formData.termsAccepted || formData.password !== formData.confirmPassword}
+              disabled={!passwordValid || !formData.termsAccepted || formData.password !== formData.confirmPassword || isLoading}
               className={`w-full py-3 px-4 text-white font-bold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                allRequirementsMet && formData.termsAccepted && formData.password === formData.confirmPassword
+                passwordValid && formData.termsAccepted && formData.password === formData.confirmPassword && !isLoading
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg hover:scale-[1.02]'
                   : 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed'
               }`}
             >
               <UserPlus className="mr-2 h-5 w-5" />
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
