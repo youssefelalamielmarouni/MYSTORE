@@ -1,14 +1,21 @@
-import { Link } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, Home, Package, Tag, Zap } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, User, Menu, X, Home, Package, Tag, Zap, LogOut } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   const isAuthenticated = !!localStorage.getItem("auth_token");
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     console.log("Open search modal");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    setIsSidebarOpen(false);
+    navigate("/login");
   };
 
   const closeSidebar = () => {
@@ -107,15 +114,26 @@ export default function Navbar() {
               {/* Desktop User Actions */}
               <div className="hidden md:flex items-center space-x-4">
                 {isAuthenticated ? (
-                  <Link 
-                    to="/profile" 
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group"
-                  >
-                    <User size={20} className="text-gray-600 group-hover:text-purple-600" />
-                    <span className="font-medium text-gray-700 group-hover:text-purple-600">
-                      Profile
-                    </span>
-                  </Link>
+                  <>
+                    <Link 
+                      to="/profile" 
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 group"
+                    >
+                      <User size={20} className="text-gray-600 group-hover:text-purple-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-purple-600">
+                        Profile
+                      </span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors duration-200 group"
+                    >
+                      <LogOut size={20} className="text-gray-600 group-hover:text-red-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-red-600">
+                        Logout
+                      </span>
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link 
@@ -303,6 +321,15 @@ export default function Navbar() {
                 >
                   Settings
                 </Link>
+                {isAuthenticated && (
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 text-sm font-medium"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
+                )}
               </div>
             </div>
 
